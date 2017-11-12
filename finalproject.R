@@ -3,6 +3,8 @@
 # import libraries
 library(tidyverse)
 library(readr)
+library(ggpubr)
+library(PerformanceAnalytics)
 
 # import text file
 setInternet2(use = TRUE)
@@ -239,45 +241,45 @@ crime <-
 
 # add nonviolent anc violent crime to come up with total crime per 100k pop
 crime <- 
-crime %>%
+  crime %>%
   mutate(totcrimeperpop = violentcrimesperpop+nonviolperpop)
 
 # join crime dataset with state_region_mapping to identify regions in united states
 crime <- 
   left_join(crime, state_region_mapping,  by = c("state" = "state"))
 
+# analyze missing values
+# DC is not being recognized into any region because it is not a state
+crime %>%
+  group_by(region) %>%
+  summarise(
+    population = sum(population),
+    numimmig = sum(numimmig),
+    totcrimeperpop = sum(totcrimeperpop)
+  )
+
+# add DC to North East, since we know from earlier 
+# analysis that issue persists only with DC
+crime <-
+  crime %>%
+  mutate(region = ifelse(is.na(region), "Northeast", region))
+
+
+crime %>%
+  group_by(region) %>%
+  summarise(
+    population = sum(population),
+    numimmig = sum(numimmig),
+    totcrimeperpop = sum(totcrimeperpop)
+  )
+
 # VISUALIZATION
 # *****************************************
-
-# scatter plot
-pairs(~population+numimmig+totcrimeperpop,
-      data=crime,
-      main="Scatterplot of population, immigrant, total crime")
-
-# viz
-crime %>%
-  ggplot(aes(x=totcrimeperpop, y=population)) +
-  geom_point(shape=1) +    # Use hollow circles
-  geom_smooth(method=lm) + # Add linear regression line 
-  ggtitle("Scatter Plot of Total Crime and Population") +
-  labs(x = "Total Crime",  y = "Population") +
-  theme_minimal()
-
-# viz
-crime %>%
-  ggplot(aes(x=totcrimeperpop, y=numimmig)) +
-  geom_point(shape=1) +    # Use hollow circles
-  geom_smooth(method=lm) + # Add linear regression line 
-  ggtitle("Scatter Plot of Total Crime and Immigrant population") +
-  labs(x = "Total Crime",  y = "Immigrant population") +
-  theme_minimal() 
-
 
 # box plot to identify outliers
 par(mfrow=c(1, 2))  # divide graph area in 2 columns
 boxplot(crime$numimmig, main="Num of Immigrants") 
 boxplot(crime$totcrimeperpop, main="Total Crime")  
-
 
 # denisty plot - check if the response variable is close to normality
 par(mfrow=c(1, 2)) 
@@ -289,6 +291,157 @@ polygon(density(crime$numimmig), col="red")
 plot(density(crime$totcrimeperpop), main="Density Plot: totcrimeperpop", ylab="Frequency", 
      sub=paste("Skewness:", round(e1071::skewness(crime$totcrimeperpop), 2)))  # density plot for 'speed'
 polygon(density(crime$totcrimeperpop), col="red")
+
+# scatter plot
+# given the density of the points, this does not reveal any meaningful information
+pairs(~population+numimmig+totcrimeperpop,
+      data=crime,
+      main="Scatterplot of population, immigrant, total crime")
+
+# scatter Plot of Total Crime and Population by Region
+# change y scale to log for better visualization
+crime_ne <-
+  crime %>%
+  filter(region == "Northeast") %>%
+  ggplot(aes(x = totcrimeperpop, y = population)) +
+  geom_point(alpha=0.3) +
+  geom_smooth(method = lm, color="black") + # Add linear regression line
+  labs(x = "Total Crime",  y = "Population") +
+  scale_y_continuous(trans = 'log2') +
+  theme_minimal()
+crime_mw <-
+  crime %>%
+  filter(region == "Midwest") %>%
+  ggplot(aes(x = totcrimeperpop, y = population)) +
+  geom_point(alpha=0.3) +
+  geom_smooth(method = lm, color="black") + # Add linear regression line
+  labs(x = "Total Crime",  y = "Population") +
+  scale_y_continuous(trans = 'log2') +
+  theme_minimal()
+crime_s <-
+  crime %>%
+  filter(region == "South") %>%
+  ggplot(aes(x = totcrimeperpop, y = population)) +
+  geom_point(alpha=0.3) +
+  geom_smooth(method = lm, color="black") + # Add linear regression line
+  labs(x = "Total Crime",  y = "Population") +
+  scale_y_continuous(trans = 'log2') +
+  theme_minimal()
+crime_w <-
+  crime %>%
+  filter(region == "West") %>%
+  ggplot(aes(x = totcrimeperpop, y = population)) +
+  geom_point(alpha=0.3) +
+  geom_smooth(method = lm, color="black") + # Add linear regression line
+  labs(x = "Total Crime",  y = "Population") +
+  scale_y_continuous(trans = 'log2') +
+  theme_minimal()
+
+ggarrange(crime_ne, crime_mw, crime_s, crime_w, 
+          labels = c("NorthEast", "MidWest", "South", "West"),
+          ncol = 2, nrow = 2) %>%
+  annotate_figure(top = text_grob("Scatter plot of Total Crime and Population", face = "bold", size = 14))
+
+# scatter Plot of Total Crime and Immigrant population by Region
+# change y scale to log for better visualization
+crime_immi_ne <-
+  crime %>%
+  filter(region == "Northeast") %>%
+  ggplot(aes(x=totcrimeperpop, y=numimmig)) +
+  geom_point(alpha=0.3) +
+  geom_smooth(method = lm, color="black") + # Add linear regression line
+  labs(x = "Total Crime",  y = "Immigrant population") +
+  scale_y_continuous(trans = 'log2') +
+  theme_minimal()
+crime_immi_mw <-
+  crime %>%
+  filter(region == "Midwest") %>%
+  ggplot(aes(x=totcrimeperpop, y=numimmig)) +
+  geom_point(alpha=0.3) +
+  geom_smooth(method = lm, color="black") + # Add linear regression line
+  labs(x = "Total Crime",  y = "Immigrant population") +
+  scale_y_continuous(trans = 'log2') +
+  theme_minimal()
+crime_immi_s <-
+  crime %>%
+  filter(region == "South") %>%
+  ggplot(aes(x=totcrimeperpop, y=numimmig)) +
+  geom_point(alpha=0.3) +
+  geom_smooth(method = lm, color="black") + # Add linear regression line
+  labs(x = "Total Crime",  y = "Immigrant population") +
+  scale_y_continuous(trans = 'log2') +
+  theme_minimal()
+crime_immi_w <-
+  crime %>%
+  filter(region == "West") %>%
+  ggplot(aes(x=totcrimeperpop, y=numimmig)) +
+  geom_point(alpha=0.3) +
+  geom_smooth(method = lm, color="black") + # Add linear regression line
+  labs(x = "Total Crime",  y = "Immigrant population") +
+  scale_y_continuous(trans = 'log2') +
+  theme_minimal()
+
+
+ggarrange(crime_immi_ne, crime_immi_mw, crime_immi_s, crime_immi_w, 
+          labels = c("NorthEast", "MidWest", "South", "West"),
+          ncol = 2, nrow = 2) %>%
+  annotate_figure(top = text_grob("Scatter plot of Total Crime and Immigrant Population", face = "bold", size = 14))
+
+
+# from the above graphs one might think that there seems to be some
+# positive correlation of crime with immigrant population. however, it is 
+# so easy to lie with numbers and visuals. being data sceientists, we need to
+# critically think and ask the right questions. if analyzed on percentage basis,
+# does our analysis tell the same story? create new columns, pct immigrants and
+# pct total crime when compared to total population
+crime <-
+  crime %>%
+  mutate(
+    pctnumimmig = (numimmig / population) * 100,
+    pcttotcrimeperpop = (totcrimeperpop / population) * 100)
+
+# scatter Plot of Total Crime and Immigrant population by Region on percentage basis
+# log y scale is not needed as we already have data in percentages
+# we prove the hypothesis that it is easy to lie with data. when analyzed on 
+# percentage basis, there seems to be a negative trend
+
+pct_crime_immi_ne <-
+  crime %>%
+  filter(region == "Northeast") %>%
+  ggplot(aes(x=pcttotcrimeperpop, y=pctnumimmig)) +
+  geom_point(alpha=0.3) +
+  geom_smooth(method = lm, color="black") + # Add linear regression line
+  labs(x = "Total Crime",  y = "Immigrant population") +
+  theme_minimal()
+pct_crime_immi_mw <-
+  crime %>%
+  filter(region == "Midwest") %>%
+  ggplot(aes(x=pcttotcrimeperpop, y=pctnumimmig)) +
+  geom_point(alpha=0.3) +
+  geom_smooth(method = lm, color="black") + # Add linear regression line
+  labs(x = "Total Crime",  y = "Immigrant population") +
+  theme_minimal()
+pct_crime_immi_s <-
+  crime %>%
+  filter(region == "South") %>%
+  ggplot(aes(x=pcttotcrimeperpop, y=pctnumimmig)) +
+  geom_point(alpha=0.3) +
+  geom_smooth(method = lm, color="black") + # Add linear regression line
+  labs(x = "Total Crime",  y = "Immigrant population") +
+  theme_minimal()
+pct_crime_immi_w <-
+  crime %>%
+  filter(region == "West") %>%
+  ggplot(aes(x=pcttotcrimeperpop, y=pctnumimmig)) +
+  geom_point(alpha=0.3) +
+  geom_smooth(method = lm, color="black") + # Add linear regression line
+  labs(x = "Total Crime",  y = "Immigrant population") +
+  theme_minimal()
+
+ggarrange(pct_crime_immi_ne, pct_crime_immi_mw, pct_crime_immi_s, pct_crime_immi_w, 
+          labels = c("NorthEast", "MidWest", "South", "West"),
+          ncol = 2, nrow = 2) %>%
+  annotate_figure(top = text_grob("Total Crime and Immigrant Population - Pct Basis", face = "bold", size = 14))
 
 
 # MODELING
@@ -314,3 +467,39 @@ linearmod <- lm(numimmig ~ totcrimeperpop, data=crime)
 
 summary(linearmod)
 
+# create linear regression models for each region
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# create a new data frame to handle only continous variables for each region
+cor_crime_ne <-
+  crime %>%
+  filter(region == "Northeast") %>%
+  select(population, numimmig, totcrimeperpop)
+cor_crime_mw <-
+  crime %>%
+  filter(region == "Midwest") %>%
+  select(population, numimmig, totcrimeperpop)
+cor_crime_s <-
+  crime %>%
+  filter(region == "South") %>%
+  select(population, numimmig, totcrimeperpop)
+cor_crime_w <-
+  crime %>%
+  filter(region == "West") %>%
+  select(population, numimmig, totcrimeperpop)
+
+# create correlation plots for each region
+chart.Correlation(cor_crime_ne, histogram=TRUE, pch=19) #Northeast
+chart.Correlation(cor_crime_mw, histogram=TRUE, pch=19) #Midwest
+chart.Correlation(cor_crime_s, histogram=TRUE, pch=19) #South
+chart.Correlation(cor_crime_w, histogram=TRUE, pch=19) #East
+
+# build a linear regression model for each region
+lm_ne <- lm(numimmig ~ totcrimeperpop, data=cor_crime_ne) 
+lm_mw <- lm(numimmig ~ totcrimeperpop, data=cor_crime_mw) 
+lm_s <- lm(numimmig ~ totcrimeperpop, data=cor_crime_s) 
+lm_w <- lm(numimmig ~ totcrimeperpop, data=cor_crime_w) 
+
+summary(lm_ne)
+summary(lm_mw)
+summary(lm_s)
+summary(lm_w)
