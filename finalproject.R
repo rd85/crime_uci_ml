@@ -264,13 +264,21 @@ crime <-
   crime %>%
   mutate(region = ifelse(is.na(region), "Northeast", region))
 
+# total crime national level
+crime %>%
+  summarise(
+    mean_totcrimeperpop = mean(totcrimeperpop),
+    median_totcrimeperpop = median(totcrimeperpop)
+  )
 
+# total crime per region
 crime %>%
   group_by(region) %>%
   summarise(
     population = sum(population),
     numimmig = sum(numimmig),
-    totcrimeperpop = sum(totcrimeperpop)
+    totcrimeperpop = sum(totcrimeperpop),
+    mean_totcrimeperpop = mean(totcrimeperpop)
   )
 
 # VISUALIZATION
@@ -455,12 +463,53 @@ library(corrplot)
 cor_crime <-
   crime %>%
   select(
+    region,
     population,
     numimmig,
     totcrimeperpop)
 
 # plot correlation
 corrplot(cor(cor_crime), method = "number")
+
+# plot correlation for each region
+cor_crime_ne <-
+  cor_crime %>%
+  filter(region == "Northeast") %>%
+  select(population,
+         numimmig,
+         totcrimeperpop) %>%
+  cor()
+cor_crime_mw <-
+  cor_crime %>%
+  filter(region == "Midwest") %>%
+  select(population,
+         numimmig,
+         totcrimeperpop) %>%
+  cor()
+cor_crime_s <-
+  cor_crime %>%
+  filter(region == "South") %>%
+  select(population,
+         numimmig,
+         totcrimeperpop) %>%
+  cor()
+cor_crime_w <-
+  cor_crime %>%
+  filter(region == "West") %>%
+  select(population,
+         numimmig,
+         totcrimeperpop) %>%
+  cor()
+
+# corrplots for each region
+cor_crime_ne %>%
+  corrplot(method = "number")
+cor_crime_mw %>%
+  corrplot(method = "number")
+cor_crime_s %>%
+  corrplot(method = "number")
+cor_crime_w %>%
+  corrplot(method = "number")
 
 # build a linear regression model
 linearmod <- lm(numimmig ~ totcrimeperpop, data=crime) 
@@ -487,11 +536,11 @@ cor_crime_w <-
   filter(region == "West") %>%
   select(population, numimmig, totcrimeperpop)
 
-# create correlation plots for each region
+# create correlation charts for each region
 chart.Correlation(cor_crime_ne, histogram=TRUE, pch=19) #Northeast
 chart.Correlation(cor_crime_mw, histogram=TRUE, pch=19) #Midwest
 chart.Correlation(cor_crime_s, histogram=TRUE, pch=19) #South
-chart.Correlation(cor_crime_w, histogram=TRUE, pch=19) #East
+chart.Correlation(cor_crime_w, histogram=TRUE, pch=19) #West
 
 # build a linear regression model for each region
 lm_ne <- lm(numimmig ~ totcrimeperpop, data=cor_crime_ne) 
@@ -499,6 +548,7 @@ lm_mw <- lm(numimmig ~ totcrimeperpop, data=cor_crime_mw)
 lm_s <- lm(numimmig ~ totcrimeperpop, data=cor_crime_s) 
 lm_w <- lm(numimmig ~ totcrimeperpop, data=cor_crime_w) 
 
+# summary stats for lm for each region
 summary(lm_ne)
 summary(lm_mw)
 summary(lm_s)
