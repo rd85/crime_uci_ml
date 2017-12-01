@@ -512,7 +512,7 @@ cor_crime_w %>%
   corrplot(method = "number")
 
 # build a linear regression model
-linearmod <- lm(numimmig ~ totcrimeperpop, data=crime) 
+linearmod <- lm(totcrimeperpop ~ numimmig, data=crime) 
 
 summary(linearmod)
 
@@ -543,10 +543,10 @@ chart.Correlation(cor_crime_s, histogram=TRUE, pch=19) #South
 chart.Correlation(cor_crime_w, histogram=TRUE, pch=19) #West
 
 # build a linear regression model for each region
-lm_ne <- lm(numimmig ~ totcrimeperpop, data=cor_crime_ne) 
-lm_mw <- lm(numimmig ~ totcrimeperpop, data=cor_crime_mw) 
-lm_s <- lm(numimmig ~ totcrimeperpop, data=cor_crime_s) 
-lm_w <- lm(numimmig ~ totcrimeperpop, data=cor_crime_w) 
+lm_ne <- lm(totcrimeperpop ~ numimmig, data=cor_crime_ne) 
+lm_mw <- lm(totcrimeperpop ~ numimmig, data=cor_crime_mw) 
+lm_s <- lm(totcrimeperpop ~ numimmig, data=cor_crime_s) 
+lm_w <- lm(totcrimeperpop ~ numimmig, data=cor_crime_w) 
 
 # summary stats for lm for each region
 summary(lm_ne)
