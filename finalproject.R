@@ -1,6 +1,12 @@
 # IMPORT
 # *****************************************
-# import libraries
+# install and import libraries
+
+if(!require("tidyverse")){install.packages("tidyverse")}
+if(!require("readr")){install.packages("readr")}
+if(!require("ggpubr")){install.packages("ggpubr")}
+if(!require("PerformanceAnalytics")){install.packages("PerformanceAnalytics")}
+
 library(tidyverse)
 library(readr)
 library(ggpubr)
@@ -35,6 +41,7 @@ crimedatacleaned <-
   )
 
 # import sate region mapping data set
+# download the mapping file from [https://github.com/rd85/crime_uci_ml/blob/master/state_region_mapping.xlsx]
 library(readxl)
 state_region_mapping <- 
   read_excel("~/Harrisburg Uni/4. EDA/Final Project/state_region_mapping.xlsx")
